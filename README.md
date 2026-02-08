@@ -1,30 +1,32 @@
-# VM Station Connect
+# VM Station API
 
-自动化 SSH 连接管理工具，通过 ngrok 建立远程 SSH 访问隧道。
+自动化 HTTP API 连接管理工具，通过 ngrok 建立远程 HTTP 访问隧道，实现内网 API 服务的公网访问。
 
 ## 功能特性
 
-- 🚀 自动启动和管理 ngrok TCP 隧道
+- 🚀 自动启动和管理 ngrok HTTP 隧道（端口 2008）
 - 📝 自动记录连接信息到日志文件
 - 🔄 支持 Git 自动提交和推送连接信息
-- 🪟 跨平台支持（Linux Shell 脚本 + Windows Batch 脚本）
+- 🪟 跨平台支持（Linux 服务端 + Windows 客户端）
+- 📋 Windows 端自动复制 URL 到剪贴板
 
 ## 文件说明
 
 - **connect.sh** - Linux/Unix 主启动脚本
   - 停止旧的 ngrok 进程
-  - 启动新的 ngrok TCP 隧道（SSH 端口 22）
+  - 启动新的 ngrok HTTP 隧道（端口 2008）
   - 获取公共访问 URL
   - 保存连接信息到日志文件
   - 自动 Git 提交和推送
 
-- **update.bat** - Windows 更新脚本
-  - 从日志文件读取最新连接信息
-  - 自动更新 SSH 配置文件
-  - 解析 ngrok URL 并配置主机和端口
+- **update.bat** - Windows 客户端更新脚本
+  - 从 Git 拉取最新连接信息
+  - 读取并显示 HTTP API URL
+  - 自动保存 URL 到本地配置文件
+  - 自动复制 URL 到剪贴板
 
 - **connected_info.log** - 当前连接信息
-  - 存储 ngrok 生成的公共 TCP URL
+  - 存储 ngrok 生成的公共 HTTP URL
 
 - **connecting_details.log** - 连接详细日志
   - ngrok 启动和运行的详细输出
@@ -41,56 +43,54 @@
 ### Windows 系统
 
 ```batch
-# 更新本地 SSH 配置
+# 拉取最新 URL 并保存到本地
 update.bat
 ```
 
 连接信息会保存在 `connected_info.log` 中，格式如：
 ```
-tcp://6.tcp.eu.ngrok.io:13951
+https://your-subdomain.ngrok-free.dev
 ```
+
+Windows 端还会将 URL 保存到 `%USERPROFILE%\.vm-station-api\api_url.txt` 并自动复制到剪贴板。
 
 ## 前置要求
 
+### Linux 服务端
 - ngrok 已安装并配置 authtoken
 - Git 已安装并配置用户信息
-- jq（JSON 解析工具，Linux 系统需要）
-- SSH 客户端
+- jq（JSON 解析工具）
+- 端口 2008 上运行的 HTTP 服务
+
+### Windows 客户端
+- Git 已安装
+- 已克隆本仓库到 `%USERPROFILE%\.vm-station-api`
 
 ## 工作流程
 
 1. **Linux 端（服务器）**：
-   - 运行 `connect.sh`
-   - ngrok 创建 SSH 隧道
-   - 连接信息自动提交到 Git 仓库
+   - 确保端口 2008 上有 HTTP 服务运行
+   - 运行 `./connect.sh`
+   - ngrok 创建 HTTP 隧道指向 localhost:2008
+   - 公网 HTTPS URL 自动保存并推送到 Git 仓库
 
 2. **Windows 端（客户端）**：
    - 运行 `update.bat`
-   - 从 Git 拉取最新连接信息
-   - 自动更新 `~/.ssh/config`
-   - 使用 `ssh vm-station` 即可连接
-
-## SSH 配置示例
-
-脚本会自动在 SSH 配置中创建类似以下的条目：
-
-```
-Host vm-station
-    HostName 6.tcp.eu.ngrok.io
-    User holi
-    Port 13951
-```
+   - 从 Git 拉取最新的 ngrok URL
+   - URL 自动保存到本地文件并复制到剪贴板
+   - 直接使用该 URL 访问内网 API 服务
 
 ## 注意事项
 
-- ngrok 免费版隧道 URL 会在每次重启时变化
-- 确保 Git 仓库有适当的访问权限
-- Windows 脚本需要在具有管理员权限的环境中运行
-- 连接信息会自动推送到远程仓库，请注意安全
+- ⚠️ ngrok 免费版隧道 URL 会在每次重启时变化
+- ⚠️ 确保端口 2008 上有服务运行，否则访问会失败
+- ⚠️ 连接信息会自动推送到远程仓库，请注意 API 安全
+- 💡 建议在 API 服务中实现认证机制保护接口
+- 💡 ngrok 免费版有请求速率限制，生产环境建议升级
 
 ## 仓库信息
 
-- **远程仓库**: git@github.com:station2026/vm-station-connect.git
+- **远程仓库**: git@github.com:station2026/vm-station-api.git
 - **用户**: station
 - **邮箱**: mumadofihi69963@google.com
 

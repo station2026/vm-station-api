@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ==============================================================================
-#  start_and_push.sh
+#  connect.sh
 #
 #  This script automates the process of:
 #  1. Stopping any old ngrok instances.
-#  2. Starting a new ngrok TCP tunnel for SSH on port 22.
+#  2. Starting a new ngrok HTTP tunnel on port 2008.
 #  3. Using the ngrok API to get the public URL.
 #  4. Saving the URL to a file named 'connected_info.log'.
 #  5. Committing the file to Git with a timestamped message.
@@ -18,8 +18,8 @@ killall ngrok &> /dev/null
 sleep 1
 
 # Start the new ngrok tunnel in the background
-echo "INFO: Starting new ngrok tunnel for SSH (port 22)..."
-ngrok tcp 22 --log=stdout > connecting_details.log &
+echo "INFO: Starting new ngrok tunnel for HTTP (port 2008)..."
+ngrok http 2008 --log=stdout > connecting_details.log &
 
 # Give ngrok a moment to establish the connection and start its API
 echo "INFO: Waiting for tunnel to establish..."
