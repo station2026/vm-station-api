@@ -24,6 +24,9 @@
   - 读取并显示 HTTP API URL
   - 自动保存 URL 到本地配置文件
   - 自动复制 URL 到剪贴板
+  - **自动更新 Claude Desktop 配置文件** (`.claude/settings.json`)
+    - 更新 `ANTHROPIC_BASE_URL` 字段
+    - 如果配置文件不存在，自动创建模板
 
 - **connected_info.log** - 当前连接信息
   - 存储 ngrok 生成的公共 HTTP URL
@@ -66,6 +69,33 @@ Windows 端还会将 URL 保存到 `%USERPROFILE%\.vm-station-api\api_url.txt` �
 - Git 已安装
 - 已克隆本仓库到 `%USERPROFILE%\.vm-station-api`
 
+## Claude Desktop 配置
+
+Windows 端的 `update.bat` 会自动管理 Claude Desktop 的配置文件。
+
+### 自动配置
+运行 `update.bat` 后，脚本会：
+1. 自动创建 `%USERPROFILE%\.claude\` 目录（如果不存在）
+2. 自动创建或更新 `settings.json` 文件
+3. 将 ngrok 的 HTTP URL 写入 `ANTHROPIC_BASE_URL` 字段
+
+### 首次使用
+如果是第一次运行，脚本会创建如下模板：
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "your-api-key",
+    "ANTHROPIC_BASE_URL": "https://xxx.ngrok-free.dev",
+    ...
+  }
+}
+```
+
+**重要**：首次使用时，请手动将 `your-api-key` 替换为您的实际 API 密钥。
+
+### 后续使用
+之后每次运行 `update.bat`，只会更新 `ANTHROPIC_BASE_URL` 字段，其他配置保持不变。
+
 ## 工作流程
 
 1. **Linux 端（服务器）**：
@@ -78,6 +108,9 @@ Windows 端还会将 URL 保存到 `%USERPROFILE%\.vm-station-api\api_url.txt` �
    - 运行 `update.bat`
    - 从 Git 拉取最新的 ngrok URL
    - URL 自动保存到本地文件并复制到剪贴板
+   - **自动更新 Claude Desktop 配置**：
+     - 更新 `%USERPROFILE%\.claude\settings.json` 中的 `ANTHROPIC_BASE_URL`
+     - 如果是首次使用，会创建配置文件模板（API key 需手动填写）
    - 直接使用该 URL 访问内网 API 服务
 
 ## 注意事项

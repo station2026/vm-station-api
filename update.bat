@@ -64,7 +64,74 @@ if %ERRORLEVEL% equ 0 (
 )
 echo.
 
+:: Update Claude settings.json
+echo INFO: Updating Claude settings...
+set "CLAUDE_DIR=%USERPROFILE%\.claude"
+set "CLAUDE_SETTINGS=%CLAUDE_DIR%\settings.json"
+
+:: Create .claude directory if it doesn't exist
+if not exist "%CLAUDE_DIR%" (
+    mkdir "%CLAUDE_DIR%"
+    echo INFO: Created .claude directory
+)
+
+:: Check if settings.json exists
+if not exist "%CLAUDE_SETTINGS%" (
+    echo INFO: settings.json not found, creating new file...
+    (
+        echo {
+        echo   "env": {
+        echo     "ANTHROPIC_API_KEY": "your-api-key",
+        echo     "ANTHROPIC_BASE_URL": "%API_URL%",
+        echo     "API_TIMEOUT_MS": "3000000",
+        echo     "ANTHROPIC_DEFAULT_SONNET_MODEL": "gemini-claude-sonnet-4-5-thinking",
+        echo     "ANTHROPIC_DEFAULT_OPUS_MODEL": "gemini-claude-opus-4-5-thinking",
+        echo     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "gemini-claude-sonnet-4-5",
+        echo     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "0",
+        echo     "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+        echo   },
+        echo   "autoUpdaterStatus": "disabled",
+        echo   "model": "sonnet"
+        echo }
+    ) > "%CLAUDE_SETTINGS%"
+    echo SUCCESS: Created settings.json with API URL: %API_URL%
+) else (
+    echo INFO: Updating existing settings.json...
+    powershell -NoProfile -Command "$jsonPath='%CLAUDE_SETTINGS%'; $newUrl='%API_URL%'; try { $json = Get-Content $jsonPath -Raw | ConvertFrom-Json; $json.env.ANTHROPIC_BASE_URL = $newUrl; $json | ConvertTo-Json -Depth 10 | Set-Content $jsonPath -Encoding UTF8; Write-Host 'SUCCESS: Updated ANTHROPIC_BASE_URL to:' $newUrl } catch { Write-Host 'ERROR: Failed to update settings.json:' $_.Exception.Message; exit 1 }"
+    if %ERRORLEVEL% neq 0 (
+        echo WARNING: PowerShell update failed, trying text replacement...
+        call :UPDATE_JSON_FALLBACK
+    )
+)
+echo.
+
 goto :SUCCESS
+
+:UPDATE_JSON_FALLBACK
+:: Fallback method using text replacement
+set "TEMP_SETTINGS=%TEMP%\claude_settings_%RANDOM%.tmp"
+set "FOUND_LINE=0"
+(
+    for /f "usebackq tokens=* delims=" %%L in ("%CLAUDE_SETTINGS%") do (
+        set "line=%%L"
+        echo !line! | findstr /C:"ANTHROPIC_BASE_URL" >nul
+        if !ERRORLEVEL! equ 0 (
+            echo     "ANTHROPIC_BASE_URL": "%API_URL%",
+            set "FOUND_LINE=1"
+        ) else (
+            echo !line!
+        )
+    )
+) > "%TEMP_SETTINGS%"
+
+if "!FOUND_LINE!"=="1" (
+    move /Y "%TEMP_SETTINGS%" "%CLAUDE_SETTINGS%" >nul
+    echo SUCCESS: Updated ANTHROPIC_BASE_URL using fallback method
+) else (
+    del "%TEMP_SETTINGS%" 2>nul
+    echo WARNING: Could not find ANTHROPIC_BASE_URL line in settings.json
+)
+exit /b 0
 
 :SUCCESS
 echo ===================================================================
